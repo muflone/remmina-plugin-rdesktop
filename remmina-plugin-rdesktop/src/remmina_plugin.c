@@ -249,7 +249,7 @@ static gboolean remmina_plugin_open_connection(RemminaProtocolWidget *gp)
   // Execute the external process rdesktop
   ret = g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH,
     NULL, NULL, &gpdata->pid, &error);
-  remmina_plugin_service->log_printf("[RDESKTOP] started rdesktop with pid %d\n", &gpdata->pid);
+  remmina_plugin_service->log_printf("[RDESKTOP] started rdesktop with GPid %d\n", &gpdata->pid);
   // Free the arguments list
   for (i = 0; i < argc; i++)
   {
