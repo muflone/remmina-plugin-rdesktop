@@ -187,7 +187,12 @@ static gboolean remmina_plugin_open_connection(RemminaProtocolWidget *gp)
     // The SeamlessRDP option cannot be combined with screen resolutions
     if (GET_PLUGIN_BOOLEAN("seamlessrdp"))
     {
-      ADD_ARGUMENT("-A", NULL);
+      option_str = GET_PLUGIN_STRING("seamlessrdpshell");
+      if (option_str)
+      {
+        ADD_ARGUMENT("-A", g_strdup_printf("\"%s\" %s", option_str, GET_PLUGIN_STRING("exec")));
+        g_free(option_str);
+      }
     }
     else {
       // Desktop geometry (WxH)
@@ -362,6 +367,7 @@ static const RemminaProtocolSetting remmina_plugin_advanced_settings[] =
     "ar,cs,da,de,de-ch,en-dv,en-gb,en-us,es,et,fi,fo,fr,fr-be,fr-ca,fr-ch,he,hr,hu,is,it,ja,ko,lt,lv,mk,nl,nl-be,no,pl,pt,pt-br,ru,sl,sv,th,tr", NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_CHECK, "fullscreen", N_("Fullscreen"), TRUE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_CHECK, "seamlessrdp", N_("Seamless RDP"), FALSE, NULL, NULL },
+  { REMMINA_PROTOCOL_SETTING_TYPE_TEXT, "seamlessrdpshell", N_("Seamless RDP Shell Path"), FALSE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_CHECK, "console", N_("Attach to console (Windows 2003 / 2003 R2)"), FALSE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_CHECK, "compression", N_("RDP datastream compression"), TRUE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_CHECK, "bitmapcaching", N_("Bitmap caching"), FALSE, NULL, NULL },
