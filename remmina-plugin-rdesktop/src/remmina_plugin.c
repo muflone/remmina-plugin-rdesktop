@@ -93,10 +93,12 @@ static gboolean remmina_plugin_open_connection(RemminaProtocolWidget *gp)
   #define ADD_ARGUMENT(name, value) \
     { \
       argv[argc] = g_strdup(name); \
+      argv_debug[argc] = g_strdup(name); \
       argc++; \
       if (value != NULL) \
       { \
         argv[argc] = value; \
+        argv_debug[argc++] = g_strdup(g_strcmp0(name, "-p") != 0 ? value : "XXXXX"); \
       } \
     }
   RemminaPluginData *gpdata;
@@ -104,6 +106,8 @@ static gboolean remmina_plugin_open_connection(RemminaProtocolWidget *gp)
   gboolean ret;
   GError *error = NULL;
   gchar *argv[50];  // Contains all the arguments included the password
+  gchar *argv_debug[50]; // Contains all the arguments, excluding the password
+  gchar *command_line; // The whole command line obtained from argv_debug
   gint argc;
   gint i;
   
@@ -238,13 +242,20 @@ static gboolean remmina_plugin_open_connection(RemminaProtocolWidget *gp)
   g_free(option_str);
   // End of the arguments list
   ADD_ARGUMENT(NULL, NULL);
-  remmina_plugin_service->log_printf("[RDESKTOP] starting rdesktop\n");
+  // Retrieve the whole command line
+  command_line = g_strjoinv(g_strdup(" "), (gchar **)&argv_debug[0]);
+  remmina_plugin_service->log_printf("[RDESKTOP] starting %s\n", command_line);
+  g_free(command_line);
+  // Execute the external process rdesktop
   ret = g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH,
     NULL, NULL, &gpdata->pid, &error);
   remmina_plugin_service->log_printf("[RDESKTOP] started rdesktop with pid %d\n", &gpdata->pid);
   // Free the arguments list
   for (i = 0; i < argc; i++)
+  {
+    g_free(argv_debug[i]);
     g_free(argv[i]);
+  }
   // Show error message
   if (!ret)
     remmina_plugin_service->protocol_plugin_set_error(gp, "%s", error->message);
