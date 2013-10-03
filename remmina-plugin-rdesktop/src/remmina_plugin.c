@@ -90,7 +90,15 @@ static gboolean remmina_plugin_open_connection(RemminaProtocolWidget *gp)
     remmina_plugin_service->file_get_int(remminafile, value, default_value)
   #define GET_PLUGIN_PASSWORD(value) \
     g_strdup(remmina_plugin_service->file_get_secret(remminafile, value))
-
+  #define ADD_ARGUMENT(name, value) \
+    { \
+      argv[argc] = g_strdup(name); \
+      argc++; \
+      if (value != NULL) \
+      { \
+        argv[argc] = value; \
+      } \
+    }
   RemminaPluginData *gpdata;
   RemminaFile *remminafile;
   gboolean ret;
@@ -114,175 +122,126 @@ static gboolean remmina_plugin_open_connection(RemminaProtocolWidget *gp)
   }
 
   argc = 0;
-  argv[argc++] = g_strdup("rdesktop");
-
+  // Main executable name
+  ADD_ARGUMENT("rdesktop", NULL);
+  // Username for authentication on the server
   option_str = GET_PLUGIN_STRING("username");
   if (option_str)
-  {
-    argv[argc++] = g_strdup("-u");
-    argv[argc++] = g_strdup(option_str);
-  }
-
+    ADD_ARGUMENT("-u", option_str);
+  // Domain for authentication
   option_str = GET_PLUGIN_STRING("domain");
   if (option_str)
-  {
-    argv[argc++] = g_strdup("-d");
-    argv[argc++] = g_strdup(option_str);
-  }
-
+    ADD_ARGUMENT("-d", option_str);
+  // The  password  to  authenticate  with
   option_str = GET_PLUGIN_PASSWORD("password");
   if (option_str)
-  {
-    argv[argc++] = g_strdup("-p");
-    argv[argc++] = g_strdup(option_str);
-  }
-
+    ADD_ARGUMENT("-p", option_str);
+  // Client hostname
   option_str = GET_PLUGIN_STRING("clientname");
   if (option_str)
-  {
-    argv[argc++] = g_strdup("-n");
-    argv[argc++] = g_strdup(option_str);
-  }
-
+    ADD_ARGUMENT("-n", option_str);
+  // Startup shell to execute on the server
   option_str = GET_PLUGIN_STRING("exec");
   if (option_str)
-  {
-    argv[argc++] = g_strdup("-s");
-    argv[argc++] = g_strdup(option_str);
-  }
-
+    ADD_ARGUMENT("-s", option_str);
+  // The initial working directory for the user
   option_str = GET_PLUGIN_STRING("execpath");
   if (option_str)
-  {
-    argv[argc++] = g_strdup("-c");
-    argv[argc++] = g_strdup(option_str);
-  }
-
+    ADD_ARGUMENT("-c", option_str);
+  // Sets the window title
   option_str = GET_PLUGIN_STRING("title");
   if (option_str)
-  {
-    argv[argc++] = g_strdup("-T");
-    argv[argc++] = g_strdup(option_str);
-  }
-
+    ADD_ARGUMENT("-T", option_str);
+  // Keyboard layout to emulate
   option_str = GET_PLUGIN_STRING("keymap");
   if (option_str)
-  {
-    argv[argc++] = g_strdup("-k");
-    argv[argc++] = g_strdup(option_str);
-  }
-
+    ADD_ARGUMENT("-k", option_str);
+  // Attach to the console of the server (requires Windows Server 2003 or newer)
   if (GET_PLUGIN_BOOLEAN("console"))
-  {
-    argv[argc++] = g_strdup("-0");
-  }
-
+    ADD_ARGUMENT("-0", NULL);
+  // Enable compression of the RDP datastream
   if (GET_PLUGIN_BOOLEAN("compression"))
-  {
-    argv[argc++] = g_strdup("-z");
-  }
-
+    ADD_ARGUMENT("-z", NULL);
+  // Enable caching of bitmaps to disk (persistent bitmap caching)
   if (GET_PLUGIN_BOOLEAN("bitmapcaching"))
-  {
-    argv[argc++] = g_strdup("-P");
-  }
-
+    ADD_ARGUMENT("-P", NULL);
+  // Redirects a path to the share \\tsclient\<sharename> on the server
   option_str = GET_PLUGIN_STRING("sharefolder");
   if (option_str)
   {
-    argv[argc++] = g_strdup("-r");
-    argv[argc++] = g_strdup_printf("disk:share=%s", option_str);
+    ADD_ARGUMENT("-r", g_strdup_printf("disk:share=%s", option_str));
+    g_free(option_str);
   }
 
   if (GET_PLUGIN_BOOLEAN("fullscreen"))
   {
-    argv[argc++] = g_strdup("-f");
+    // Enable fullscreen mode
+    ADD_ARGUMENT("-f", NULL);
   }
   else
   {
-	// The SeamlessRDP cannot be combined with screen resolutions
+    // The SeamlessRDP option cannot be combined with screen resolutions
     if (GET_PLUGIN_BOOLEAN("seamlessrdp"))
     {
-      argv[argc++] = g_strdup("-A");
+      ADD_ARGUMENT("-A", NULL);
     }
     else {
-      // g_print("Resolution %dx%d.\n", GET_PLUGIN_INT("resolution_width", 1), GET_PLUGIN_INT("resolution_height", 2));
-      argv[argc++] = g_strdup("-g");
-      argv[argc++] = g_strdup_printf("%ix%i", 
-        GET_PLUGIN_INT("resolution_width", 1024),
-        GET_PLUGIN_INT("resolution_height", 768)
+      // Desktop geometry (WxH)
+      ADD_ARGUMENT("-g", g_strdup_printf("%ix%i", 
+        GET_PLUGIN_INT("resolution_width", 1024), 
+        GET_PLUGIN_INT("resolution_height", 768))
       );
     }
   }
-
+  // Sets the colour depth for the connection
   option_int = GET_PLUGIN_INT("colordepth", 0);
   if (option_int != 0)
-  {
-    argv[argc++] = g_strdup("-a");
-    argv[argc++] = g_strdup_printf("%i", option_int);
-  }
-
+    ADD_ARGUMENT("-a", g_strdup_printf("%i", option_int));
+  // Changes default bandwidth performance behaviour for RDP5
   option_str = GET_PLUGIN_STRING("experience");
   if (option_str)
-  {
-    argv[argc++] = g_strdup("-x");
-    argv[argc++] = option_str;
-  }
-
+    ADD_ARGUMENT("-x", option_str);
+  // Redirects sound generated on the server to the client
   option_str = GET_PLUGIN_STRING("sound");
   if (option_str)
   {
-    argv[argc++] = g_strdup("-r");
-    argv[argc++] = g_strdup_printf("sound:%s", option_str);
+    ADD_ARGUMENT("-r", g_strdup_printf("sound:%s", option_str));
+    g_free(option_str);
   }
-
+  // Hide window manager decorations, by using MWM hints
   if (GET_PLUGIN_BOOLEAN("hidedecorations"))
-  {
-    argv[argc++] = g_strdup("-D");
-  }
-
+    ADD_ARGUMENT("-D", NULL);
+  // Do not override window manager key bindings
   if (GET_PLUGIN_BOOLEAN("nograbkeyboard"))
-  {
-    argv[argc++] = g_strdup("-K");
-  }
-
+    ADD_ARGUMENT("-K", NULL);
+  // Disable  encryption  from  client to server
   if (GET_PLUGIN_BOOLEAN("noencryption"))
-  {
-    argv[argc++] = g_strdup("-E");
-  }
-
+    ADD_ARGUMENT("-E", NULL);
+  // Enable  numlock  syncronization between the Xserver and the remote RDP session
   if (GET_PLUGIN_BOOLEAN("syncnumlock"))
-  {
-    argv[argc++] = g_strdup("-N");
-  }
-
+    ADD_ARGUMENT("-N", NULL);
+  // Use RDP version 4
   if (GET_PLUGIN_BOOLEAN("rdp4"))
-  {
-    argv[argc++] = g_strdup("-4");
-  }
-
+    ADD_ARGUMENT("-4", NULL);
+  // Use RDP version 5
   if (GET_PLUGIN_BOOLEAN("rdp5"))
-  {
-    argv[argc++] = g_strdup("-5");
-  }
-
+    ADD_ARGUMENT("-5", NULL);
+  // Do not send mouse motion events
   if (GET_PLUGIN_BOOLEAN("nomousemotion"))
-  {
-    argv[argc++] = g_strdup("-m");
-  }
-
-  argv[argc++] = g_strdup("-X");
-  argv[argc++] = g_strdup_printf("%i", gpdata->socket_id);
-
+    ADD_ARGUMENT("-m", NULL);
+  // Embed rdesktop-window in another window
+  ADD_ARGUMENT("-X", g_strdup_printf("%i", gpdata->socket_id));
+  // Server address
   option_str = GET_PLUGIN_STRING("server");
-  argv[argc++] = option_str;
-  argv[argc++] = NULL;
-
+  ADD_ARGUMENT(option_str, NULL);
+  g_free(option_str);
+  // End of the arguments list
+  ADD_ARGUMENT(NULL, NULL);
   remmina_plugin_service->log_printf("[RDESKTOP] starting rdesktop\n");
   ret = g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH,
     NULL, NULL, &gpdata->pid, &error);
   remmina_plugin_service->log_printf("[RDESKTOP] started rdesktop with pid %d\n", &gpdata->pid);
-
+  // Free the arguments list
   for (i = 0; i < argc; i++)
     g_free(argv[i]);
   // Show error message
