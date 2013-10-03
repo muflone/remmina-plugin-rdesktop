@@ -89,13 +89,13 @@ static gboolean remmina_plugin_open_connection(RemminaProtocolWidget *gp)
   #define GET_PLUGIN_INT(value, default_value) \
     remmina_plugin_service->file_get_int(remminafile, value, default_value)
   #define GET_PLUGIN_PASSWORD(value) \
-    g_strdup(remmina_plugin_service->file_get_secret(remminafile, value));
+    g_strdup(remmina_plugin_service->file_get_secret(remminafile, value))
 
   RemminaPluginData *gpdata;
   RemminaFile *remminafile;
   gboolean ret;
   GError *error = NULL;
-  gchar *argv[50];
+  gchar *argv[50];  // Contains all the arguments included the password
   gint argc;
   gint i;
   
@@ -285,10 +285,10 @@ static gboolean remmina_plugin_open_connection(RemminaProtocolWidget *gp)
 
   for (i = 0; i < argc; i++)
     g_free(argv[i]);
-
+  // Show error message
   if (!ret)
     remmina_plugin_service->protocol_plugin_set_error(gp, "%s", error->message);
-
+  // Show attached window socket ID
   if (!GET_PLUGIN_BOOLEAN("detached"))
   {
     remmina_plugin_service->log_printf("[RDESKTOP] attached window to socket %d\n", gpdata->socket_id);
