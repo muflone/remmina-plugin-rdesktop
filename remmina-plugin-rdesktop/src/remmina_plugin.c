@@ -230,7 +230,8 @@ static gboolean remmina_plugin_open_connection(RemminaProtocolWidget *gp)
   if (GET_PLUGIN_BOOLEAN("nomousemotion"))
     ADD_ARGUMENT("-m", NULL);
   // Embed rdesktop-window in another window
-  ADD_ARGUMENT("-X", g_strdup_printf("%i", gpdata->socket_id));
+  if (gpdata->socket_id != 0)
+    ADD_ARGUMENT("-X", g_strdup_printf("%i", gpdata->socket_id));
   // Server address
   option_str = GET_PLUGIN_STRING("server");
   ADD_ARGUMENT(option_str, NULL);
