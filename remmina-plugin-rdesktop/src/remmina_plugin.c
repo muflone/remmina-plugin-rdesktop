@@ -270,18 +270,6 @@ static gboolean remmina_plugin_rdesktop_close_connection(RemminaProtocolWidget *
   return FALSE;
 }
 
-static gboolean remmina_plugin_query_feature(RemminaProtocolWidget *gp, const RemminaProtocolFeature *feature)
-{
-  remmina_plugin_service->log_printf("[%s] remmina_plugin_query_feature\n", PLUGIN_NAME);
-  return FALSE;
-}
-
-static void remmina_plugin_call_feature(RemminaProtocolWidget *gp, const RemminaProtocolFeature *feature)
-{
-  remmina_plugin_service->log_printf("[%s] remmina_plugin_call_feature\n", PLUGIN_NAME);
-  return;
-}
-
 static gpointer colordepth_list[] =
 {
   "8", N_("256 colors (8 bpp)"),
@@ -385,8 +373,8 @@ static RemminaProtocolPlugin remmina_plugin =
   remmina_plugin_rdesktop_init,
   remmina_plugin_rdesktop_open_connection,
   remmina_plugin_rdesktop_close_connection,
-  remmina_plugin_rdesktop_query_feature,
-  remmina_plugin_rdesktop_call_feature
+  NULL,
+  NULL
 };
 
 G_MODULE_EXPORT gboolean remmina_plugin_entry(RemminaPluginService *service)
