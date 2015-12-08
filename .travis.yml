@@ -13,13 +13,13 @@ addons:
 install:
   - echo install
   - wget --output-document=remmina-plugin-builder.tar.gz
-    https://github.com/muflone/remmina-plugin-builder/archive/1.2.1.0.tar.gz
+    https://github.com/muflone/remmina-plugin-builder/archive/1.2.2.0.tar.gz
   - tar --extract --verbose --gzip --file remmina-plugin-builder.tar.gz
   - cp --verbose --recursive remmina-plugin-rdesktop CMakeLists.txt
-    remmina-plugin-builder-1.2.1.0/remmina-plugin-to-build/
+    remmina-plugin-builder-1.2.2.0/remmina-plugin-to-build/
 script:
   - echo script
-  - cd remmina-plugin-builder-1.2.1.0
+  - cd remmina-plugin-builder-1.2.2.0
   - cmake -DCMAKE_INSTALL_PREFIX=install_dir -DWITH_TRACE_CALLS=1 .
   - make
   - make install

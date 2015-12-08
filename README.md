@@ -21,16 +21,16 @@ RDP connection with rdesktop.
 
 Download and extract [**Remmina Plugin Builder**](https://github.com/muflone/remmina-plugin-builder/releases/):
 
-    wget -O remmina-plugin-builder.tar.gz https://github.com/muflone/remmina-plugin-builder/archive/1.2.1.0.tar.gz
+    wget -O remmina-plugin-builder.tar.gz https://github.com/muflone/remmina-plugin-builder/archive/1.2.2.0.tar.gz
     tar --extract --verbose --gzip --file remmina-plugin-builder.tar.gz
   
 Copy the plugin source files to the **remmina-plugin-to-build** directory:
 
-    cp --recursive remmina-plugin-rdesktop CMakeLists.txt remmina-plugin-builder-1.2.1.0/remmina-plugin-to-build/
+    cp --recursive remmina-plugin-rdesktop CMakeLists.txt remmina-plugin-builder-1.2.2.0/remmina-plugin-to-build/
 
 Build the plugin using Remmina Plugin Builder:
 
-    cd remmina-plugin-builder-1.2.1.0
+    cd remmina-plugin-builder-1.2.2.0
     cmake -DCMAKE_INSTALL_PREFIX=/usr .
     make
   
