@@ -36,22 +36,25 @@ static RemminaPluginService *remmina_plugin_service = NULL;
 
 static void remmina_plugin_rdesktop_on_plug_added(GtkSocket *socket, RemminaProtocolWidget *gp)
 {
+  TRACE_CALL("remmina_plugin_rdesktop_on_plug_added");
   RemminaPluginData *gpdata;
   gpdata = (RemminaPluginData*) g_object_get_data(G_OBJECT(gp), "plugin-data");
-  remmina_plugin_service->log_printf("[%s] remmina_plugin_rdesktop_on_plug_added socket %d\n", PLUGIN_NAME, gpdata->socket_id);
+  remmina_plugin_service->log_printf("[%s] Plugin plug added on socket %d\n", PLUGIN_NAME, gpdata->socket_id);
   remmina_plugin_service->protocol_plugin_emit_signal(gp, "connect");
   return;
 }
 
 static void remmina_plugin_rdesktop_on_plug_removed(GtkSocket *socket, RemminaProtocolWidget *gp)
 {
-  remmina_plugin_service->log_printf("[%s] remmina_plugin_rdesktop_on_plug_removed\n", PLUGIN_NAME);
+  TRACE_CALL("remmina_plugin_rdesktop_on_plug_removed");
+  remmina_plugin_service->log_printf("[%s] Plugin plug removed\n", PLUGIN_NAME);
   remmina_plugin_service->protocol_plugin_close_connection(gp);
 }
 
 static void remmina_plugin_rdesktop_init(RemminaProtocolWidget *gp)
 {
-  remmina_plugin_service->log_printf("[%s] remmina_plugin_rdesktop_init\n", PLUGIN_NAME);
+  TRACE_CALL("remmina_plugin_rdesktop_init");
+  remmina_plugin_service->log_printf("[%s] Plugin init\n", PLUGIN_NAME);
   RemminaPluginData *gpdata;
 
   gpdata = g_new0(RemminaPluginData, 1);
@@ -67,7 +70,8 @@ static void remmina_plugin_rdesktop_init(RemminaProtocolWidget *gp)
 
 static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *gp)
 {
-  remmina_plugin_service->log_printf("[%s] remmina_plugin_rdesktop_open_connection\n", PLUGIN_NAME);
+  TRACE_CALL("remmina_plugin_rdesktop_open_connection");
+  remmina_plugin_service->log_printf("[%s] Plugin open connection\n", PLUGIN_NAME);
   #define GET_PLUGIN_STRING(value) \
     g_strdup(remmina_plugin_service->file_get_string(remminafile, value))
   #define GET_PLUGIN_BOOLEAN(value) \
@@ -265,7 +269,8 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
 
 static gboolean remmina_plugin_rdesktop_close_connection(RemminaProtocolWidget *gp)
 {
-  remmina_plugin_service->log_printf("[%s] remmina_plugin_rdesktop_close_connection\n", PLUGIN_NAME);
+  TRACE_CALL("remmina_plugin_rdesktop_close_connection");
+  remmina_plugin_service->log_printf("[%s] Plugin close connection\n", PLUGIN_NAME);
   remmina_plugin_service->protocol_plugin_emit_signal(gp, "disconnect");
   return FALSE;
 }
@@ -399,6 +404,7 @@ static RemminaProtocolPlugin remmina_plugin =
 
 G_MODULE_EXPORT gboolean remmina_plugin_entry(RemminaPluginService *service)
 {
+  TRACE_CALL("remmina-plugin-rdesktop::remmina_plugin_entry");
   remmina_plugin_service = service;
 
   if (!service->register_plugin((RemminaPlugin *) &remmina_plugin))
