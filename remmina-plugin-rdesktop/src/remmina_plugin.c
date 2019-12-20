@@ -24,8 +24,7 @@
 # include <gtk/gtkx.h>
 
 // Define the color depth list
-static gpointer colordepth_list[] =
-{
+static gpointer colordepth_list[] = {
   "8", N_("256 colors (8 bpp)"),
   "15", N_("High color (15 bpp)"),
   "16", N_("High color (16 bpp)"),
@@ -35,8 +34,7 @@ static gpointer colordepth_list[] =
 };
 
 // Define the experience list
-static gpointer experience_list[] =
-{
+static gpointer experience_list[] = {
   "", N_("Default"),
   "m", N_("Modem (no wallpaper, full window drag, animations, theming)"),
   "b", N_("Broadband (remove wallpaper)"),
@@ -63,8 +61,7 @@ static gpointer experience_list[] =
 };
 
 // Define the sound list
-static gpointer sound_list[] =
-{
+static gpointer sound_list[] = {
   "off", N_("Off"),
   "local", N_("Local"),
   "local,11025,1", N_("Local - low quality"),
@@ -74,8 +71,7 @@ static gpointer sound_list[] =
   NULL
 };
 
-typedef struct
-{
+typedef struct {
   GtkSocket *socket;
   gint socket_id;
   GPid pid;
@@ -101,8 +97,7 @@ static void remmina_plugin_rdesktop_on_plug_removed(GtkSocket *socket, RemminaPr
 }
 
 /* Initialize plugin */
-static void remmina_plugin_rdesktop_init(RemminaProtocolWidget *gp)
-{
+static void remmina_plugin_rdesktop_init(RemminaProtocolWidget *gp) {
   TRACE_CALL(__func__);
   RemminaPluginData *gpdata;
   remmina_plugin_service->log_printf("[%s] Plugin init\n", PLUGIN_NAME);
@@ -120,8 +115,7 @@ static void remmina_plugin_rdesktop_init(RemminaProtocolWidget *gp)
 }
 
 /* Open connection */
-static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *gp)
-{
+static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *gp) {
   TRACE_CALL(__func__);
   RemminaFile *remminafile;
   gboolean ret;
@@ -133,7 +127,6 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
   gint i;
   gchar *option_str;
   gint option_int;
-  gint option_int_2;
   RemminaPluginData *gpdata;
 
   #define GET_PLUGIN_STRING(value) \
@@ -147,8 +140,7 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
       argv[argc] = g_strdup(name); \
       argv_debug[argc] = g_strdup(name); \
       argc++; \
-      if (value != NULL) \
-      { \
+      if (value != NULL) { \
         argv[argc] = value; \
         argv_debug[argc++] = g_strdup(g_strcmp0(name, "-p") != 0 ? value : "XXXXX"); \
       } \
@@ -159,8 +151,7 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
 
   gpdata = (RemminaPluginData*) g_object_get_data(G_OBJECT(gp), "plugin-data");
 
-  if (!GET_PLUGIN_BOOLEAN("detached"))
-  {
+  if (!GET_PLUGIN_BOOLEAN("detached")) {
     remmina_plugin_service->protocol_plugin_set_width(gp, 640);
     remmina_plugin_service->protocol_plugin_set_height(gp, 480);
     gtk_widget_set_size_request(GTK_WIDGET(gp), 640, 480);
@@ -172,71 +163,75 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
   ADD_ARGUMENT("rdesktop", NULL);
   // Username for authentication on the server
   option_str = GET_PLUGIN_STRING("username");
-  if (option_str)
+  if (option_str) {
     ADD_ARGUMENT("-u", option_str);
+  }
   // Domain for authentication
   option_str = GET_PLUGIN_STRING("domain");
-  if (option_str)
+  if (option_str) {
     ADD_ARGUMENT("-d", option_str);
+  }
   // The  password  to  authenticate  with
   option_str = GET_PLUGIN_STRING("password");
-  if (option_str)
+  if (option_str) {
     ADD_ARGUMENT("-p", option_str);
+  }
   // Client hostname
   option_str = GET_PLUGIN_STRING("clientname");
-  if (option_str)
+  if (option_str) {
     ADD_ARGUMENT("-n", option_str);
+  }
   // Startup shell to execute on the server
   option_str = GET_PLUGIN_STRING("exec");
-  if (option_str)
+  if (option_str) {
     ADD_ARGUMENT("-s", option_str);
+  }
   // The initial working directory for the user
   option_str = GET_PLUGIN_STRING("execpath");
-  if (option_str)
+  if (option_str) {
     ADD_ARGUMENT("-c", option_str);
+  }
   // Sets the window title
   option_str = GET_PLUGIN_STRING("title");
-  if (option_str)
+  if (option_str) {
     ADD_ARGUMENT("-T", option_str);
+  }
   // Keyboard layout to emulate
   option_str = GET_PLUGIN_STRING("keymap");
-  if (option_str)
+  if (option_str) {
     ADD_ARGUMENT("-k", option_str);
+  }
   // Attach to the console of the server (requires Windows Server 2003 or newer)
-  if (GET_PLUGIN_BOOLEAN("console"))
+  if (GET_PLUGIN_BOOLEAN("console")) {
     ADD_ARGUMENT("-0", NULL);
+  }
   // Enable compression of the RDP datastream
-  if (GET_PLUGIN_BOOLEAN("compression"))
+  if (GET_PLUGIN_BOOLEAN("compression")) {
     ADD_ARGUMENT("-z", NULL);
+  }
   // Enable caching of bitmaps to disk (persistent bitmap caching)
-  if (GET_PLUGIN_BOOLEAN("bitmapcaching"))
+  if (GET_PLUGIN_BOOLEAN("bitmapcaching")) {
     ADD_ARGUMENT("-P", NULL);
+  }
   // Redirects a path to the share \\tsclient\<sharename> on the server
   option_str = GET_PLUGIN_STRING("sharefolder");
-  if (option_str)
-  {
+  if (option_str) {
     ADD_ARGUMENT("-r", g_strdup_printf("disk:share=%s", option_str));
     g_free(option_str);
   }
 
-  if (GET_PLUGIN_BOOLEAN("fullscreen"))
-  {
+  if (GET_PLUGIN_BOOLEAN("fullscreen")) {
     // Enable fullscreen mode
     ADD_ARGUMENT("-f", NULL);
-  }
-  else
-  {
+  } else {
     // The SeamlessRDP option cannot be combined with screen resolutions
-    if (GET_PLUGIN_BOOLEAN("seamlessrdp"))
-    {
+    if (GET_PLUGIN_BOOLEAN("seamlessrdp")) {
       option_str = GET_PLUGIN_STRING("seamlessrdpshell");
-      if (option_str)
-      {
+      if (option_str) {
         ADD_ARGUMENT("-A", g_strdup_printf("\"%s\" %s", option_str, GET_PLUGIN_STRING("exec")));
         g_free(option_str);
       }
-    }
-    else {
+    } else {
       // Desktop geometry (WxH)
       ADD_ARGUMENT("-g", g_strdup_printf("%ix%i", 
         GET_PLUGIN_INT("resolution_width", 1024), 
@@ -246,43 +241,52 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
   }
   // Sets the colour depth for the connection
   option_int = GET_PLUGIN_INT("colordepth", 0);
-  if (option_int != 0)
+  if (option_int != 0) {
     ADD_ARGUMENT("-a", g_strdup_printf("%i", option_int));
+  }
   // Changes default bandwidth performance behaviour for RDP5
   option_str = GET_PLUGIN_STRING("experience");
-  if (option_str)
+  if (option_str) {
     ADD_ARGUMENT("-x", option_str);
+  }
   // Redirects sound generated on the server to the client
   option_str = GET_PLUGIN_STRING("sound");
-  if (option_str)
-  {
+  if (option_str) {
     ADD_ARGUMENT("-r", g_strdup_printf("sound:%s", option_str));
     g_free(option_str);
   }
   // Hide window manager decorations, by using MWM hints
-  if (GET_PLUGIN_BOOLEAN("hidedecorations"))
+  if (GET_PLUGIN_BOOLEAN("hidedecorations")) {
     ADD_ARGUMENT("-D", NULL);
+  }
   // Do not override window manager key bindings
-  if (GET_PLUGIN_BOOLEAN("nograbkeyboard"))
+  if (GET_PLUGIN_BOOLEAN("nograbkeyboard")) {
     ADD_ARGUMENT("-K", NULL);
+  }
   // Disable  encryption  from  client to server
-  if (GET_PLUGIN_BOOLEAN("noencryption"))
+  if (GET_PLUGIN_BOOLEAN("noencryption")) {
     ADD_ARGUMENT("-E", NULL);
+  }
   // Enable  numlock  syncronization between the Xserver and the remote RDP session
-  if (GET_PLUGIN_BOOLEAN("syncnumlock"))
+  if (GET_PLUGIN_BOOLEAN("syncnumlock")) {
     ADD_ARGUMENT("-N", NULL);
+  }
   // Use RDP version 4
-  if (GET_PLUGIN_BOOLEAN("rdp4"))
+  if (GET_PLUGIN_BOOLEAN("rdp4")) {
     ADD_ARGUMENT("-4", NULL);
+  }
   // Use RDP version 5
-  if (GET_PLUGIN_BOOLEAN("rdp5"))
+  if (GET_PLUGIN_BOOLEAN("rdp5")) {
     ADD_ARGUMENT("-5", NULL);
+  }
   // Do not send mouse motion events
-  if (GET_PLUGIN_BOOLEAN("nomousemotion"))
+  if (GET_PLUGIN_BOOLEAN("nomousemotion")) {
     ADD_ARGUMENT("-m", NULL);
+  }
   // Embed rdesktop-window in another window
-  if (gpdata->socket_id != 0)
+  if (gpdata->socket_id != 0) {
     ADD_ARGUMENT("-X", g_strdup_printf("%i", gpdata->socket_id));
+  }
   // Server address
   option_str = GET_PLUGIN_STRING("server");
   ADD_ARGUMENT(option_str, NULL);
@@ -297,28 +301,24 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
   ret = g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, &gpdata->pid, &error);
   remmina_plugin_service->log_printf("[RDESKTOP] started rdesktop with GPid %d\n", &gpdata->pid);
   // Free the arguments list
-  for (i = 0; i < argc; i++)
-  {
+  for (i = 0; i < argc; i++) {
     g_free(argv_debug[i]);
     g_free(argv[i]);
   }
   // Show error message
-  if (!ret)
+  if (!ret) {
     remmina_plugin_service->protocol_plugin_set_error(gp, "%s", error->message);
+  }
   // Show attached window socket ID
-  if (!GET_PLUGIN_BOOLEAN("detached"))
-  {
+  if (!GET_PLUGIN_BOOLEAN("detached")) {
     remmina_plugin_service->log_printf("[RDESKTOP] attached window to socket %d\n", gpdata->socket_id);
     return TRUE;
-  }
-  else
-  {
+  } else {
     return FALSE;
   }
 }
 
-static gboolean remmina_plugin_rdesktop_close_connection(RemminaProtocolWidget *gp)
-{
+static gboolean remmina_plugin_rdesktop_close_connection(RemminaProtocolWidget *gp) {
   TRACE_CALL(__func__);
   remmina_plugin_service->log_printf("[%s] Plugin close connection\n", PLUGIN_NAME);
   remmina_plugin_service->protocol_plugin_signal_connection_closed(gp);
@@ -334,8 +334,7 @@ static gboolean remmina_plugin_rdesktop_close_connection(RemminaProtocolWidget *
  * e) Values for REMMINA_PROTOCOL_SETTING_TYPE_SELECT or REMMINA_PROTOCOL_SETTING_TYPE_COMBO
  * f) Setting tooltip
  */
-static const RemminaProtocolSetting remmina_plugin_rdesktop_basic_settings[] =
-{
+static const RemminaProtocolSetting remmina_plugin_rdesktop_basic_settings[] = {
   { REMMINA_PROTOCOL_SETTING_TYPE_SERVER, "server", NULL, FALSE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_TEXT, "username", N_("User name"), FALSE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_PASSWORD, "password", NULL, FALSE, NULL, NULL },
@@ -357,8 +356,7 @@ static const RemminaProtocolSetting remmina_plugin_rdesktop_basic_settings[] =
  * e) Values for REMMINA_PROTOCOL_SETTING_TYPE_SELECT or REMMINA_PROTOCOL_SETTING_TYPE_COMBO
  * f) Setting tooltip
  */
-static const RemminaProtocolSetting remmina_plugin_rdesktop_advanced_settings[] =
-{
+static const RemminaProtocolSetting remmina_plugin_rdesktop_advanced_settings[] = {
   { REMMINA_PROTOCOL_SETTING_TYPE_TEXT, "title", N_("Window title"), FALSE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_TEXT, "clientname", N_("Client name"), FALSE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_TEXT, "exec", N_("Startup program"), FALSE, NULL, NULL },
@@ -383,8 +381,7 @@ static const RemminaProtocolSetting remmina_plugin_rdesktop_advanced_settings[] 
 };
 
 /* Protocol plugin definition and features */
-static RemminaProtocolPlugin remmina_plugin =
-{
+static RemminaProtocolPlugin remmina_plugin = {
   REMMINA_PLUGIN_TYPE_PROTOCOL,                 // Type
   PLUGIN_NAME,                                  // Name
   PLUGIN_DESCRIPTION,                           // Description
@@ -405,13 +402,11 @@ static RemminaProtocolPlugin remmina_plugin =
   NULL                                          // Screenshot support
 };
 
-G_MODULE_EXPORT gboolean remmina_plugin_entry(RemminaPluginService *service)
-{
+G_MODULE_EXPORT gboolean remmina_plugin_entry(RemminaPluginService *service) {
   TRACE_CALL(__func__);
   remmina_plugin_service = service;
 
-  if (!service->register_plugin((RemminaPlugin *) &remmina_plugin))
-  {
+  if (!service->register_plugin((RemminaPlugin *) &remmina_plugin)) {
     return FALSE;
   }
   return TRUE;
