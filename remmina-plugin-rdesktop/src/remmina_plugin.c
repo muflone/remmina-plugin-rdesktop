@@ -233,10 +233,11 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
       }
     } else {
       // Desktop geometry (WxH)
-      ADD_ARGUMENT("-g", g_strdup_printf("%ix%i", 
-        GET_PLUGIN_INT("resolution_width", 1024), 
-        GET_PLUGIN_INT("resolution_height", 768))
-      );
+      gint option_width = GET_PLUGIN_INT("resolution_width", 1024);
+      gint option_height = GET_PLUGIN_INT("resolution_height", 768);
+      if (option_width != 0 && option_height != 0) {
+        ADD_ARGUMENT("-g", g_strdup_printf("%ix%i", option_width, option_height));
+      }
     }
   }
   // Sets the colour depth for the connection
