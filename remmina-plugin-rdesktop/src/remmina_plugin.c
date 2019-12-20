@@ -21,13 +21,62 @@
 
 #include "plugin_config.h"
 #include <remmina/remmina_plugin.h>
-#if GTK_VERSION == 3
-  # include <gtk/gtkx.h>
-#endif
+# include <gtk/gtkx.h>
 
-typedef struct _RemminaPluginData
+// Define the color depth list
+static gpointer colordepth_list[] =
 {
-  GtkWidget *socket;
+  "8", N_("256 colors (8 bpp)"),
+  "15", N_("High color (15 bpp)"),
+  "16", N_("High color (16 bpp)"),
+  "24", N_("True color (24 bpp)"),
+  "32", N_("True color (32 bpp)"),
+  NULL
+};
+
+// Define the experience list
+static gpointer experience_list[] =
+{
+  "", N_("Default"),
+  "m", N_("Modem (no wallpaper, full window drag, animations, theming)"),
+  "b", N_("Broadband (remove wallpaper)"),
+  "l", N_("LAN (show all details)"),
+  "0x8F", N_("Modem with font smoothing"),
+  "0x81", N_("Broadband with font smoothing"),
+  "0x80", N_("LAN with font smoothing"),
+  "0x01", N_("Disable wallpaper"),
+  "0x02", N_("Disable full window drag"),
+  "0x03", N_("Disable wallpaper, full window drag"),
+  "0x04", N_("Disable animations"),
+  "0x05", N_("Disable animations, wallpaper"),
+  "0x06", N_("Disable animations, full window drag"),
+  "0x07", N_("Disable animations, wallpaper, full window drag"),
+  "0x08", N_("Disable theming"),
+  "0x09", N_("Disable theming, wallpaper"),
+  "0x0a", N_("Disable theming, full window drag"),
+  "0x0b", N_("Disable theming, wallpaper, full window drag"),
+  "0x0c", N_("Disable theming, animations"),
+  "0x0d", N_("Disable theming, animations, wallpaper"),
+  "0x0e", N_("Disable theming, animations, full window drag"),
+  "0x0f", N_("Disable everything"),
+  NULL
+};
+
+// Define the sound list
+static gpointer sound_list[] =
+{
+  "off", N_("Off"),
+  "local", N_("Local"),
+  "local,11025,1", N_("Local - low quality"),
+  "local,22050,2", N_("Local - medium quality"),
+  "local,44100,2", N_("Local - high quality"),
+  "remote", N_("Remote"),
+  NULL
+};
+
+typedef struct
+{
+  GtkSocket *socket;
   gint socket_id;
   GPid pid;
 } RemminaPluginData;
@@ -36,50 +85,63 @@ static RemminaPluginService *remmina_plugin_service = NULL;
 
 static void remmina_plugin_rdesktop_on_plug_added(GtkSocket *socket, RemminaProtocolWidget *gp)
 {
-  TRACE_CALL("remmina_plugin_rdesktop_on_plug_added");
+  TRACE_CALL(__func__);
   RemminaPluginData *gpdata;
   gpdata = (RemminaPluginData*) g_object_get_data(G_OBJECT(gp), "plugin-data");
   remmina_plugin_service->log_printf("[%s] Plugin plug added on socket %d\n", PLUGIN_NAME, gpdata->socket_id);
-  remmina_plugin_service->protocol_plugin_emit_signal(gp, "connect");
+  remmina_plugin_service->protocol_plugin_signal_connection_opened(gp);
   return;
 }
 
 static void remmina_plugin_rdesktop_on_plug_removed(GtkSocket *socket, RemminaProtocolWidget *gp)
 {
-  TRACE_CALL("remmina_plugin_rdesktop_on_plug_removed");
+  TRACE_CALL(__func__);
   remmina_plugin_service->log_printf("[%s] Plugin plug removed\n", PLUGIN_NAME);
-  remmina_plugin_service->protocol_plugin_close_connection(gp);
+  remmina_plugin_service->protocol_plugin_signal_connection_closed(gp);
 }
 
+/* Initialize plugin */
 static void remmina_plugin_rdesktop_init(RemminaProtocolWidget *gp)
 {
-  TRACE_CALL("remmina_plugin_rdesktop_init");
-  remmina_plugin_service->log_printf("[%s] Plugin init\n", PLUGIN_NAME);
+  TRACE_CALL(__func__);
   RemminaPluginData *gpdata;
-
+  remmina_plugin_service->log_printf("[%s] Plugin init\n", PLUGIN_NAME);
+  /* Instance new GtkSocket */
   gpdata = g_new0(RemminaPluginData, 1);
-  g_object_set_data_full(G_OBJECT(gp), "plugin-data", gpdata, g_free);
 
-  gpdata->socket = gtk_socket_new();
-  remmina_plugin_service->protocol_plugin_register_hostkey(gp, gpdata->socket);
-  gtk_widget_show(gpdata->socket);
+  gpdata->socket = GTK_SOCKET(gtk_socket_new());
+  remmina_plugin_service->protocol_plugin_register_hostkey(gp, GTK_WIDGET(gpdata->socket));
+  gtk_widget_show(GTK_WIDGET(gpdata->socket));
   g_signal_connect(G_OBJECT(gpdata->socket), "plug-added", G_CALLBACK(remmina_plugin_rdesktop_on_plug_added), gp);
   g_signal_connect(G_OBJECT(gpdata->socket), "plug-removed", G_CALLBACK(remmina_plugin_rdesktop_on_plug_removed), gp);
-  gtk_container_add(GTK_CONTAINER(gp), gpdata->socket);
+  gtk_container_add(GTK_CONTAINER(gp), GTK_WIDGET(gpdata->socket));
+  /* Save reference to plugin data */
+  g_object_set_data_full(G_OBJECT(gp), "plugin-data", gpdata, g_free);
 }
 
+/* Open connection */
 static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *gp)
 {
-  TRACE_CALL("remmina_plugin_rdesktop_open_connection");
-  remmina_plugin_service->log_printf("[%s] Plugin open connection\n", PLUGIN_NAME);
+  TRACE_CALL(__func__);
+  RemminaFile *remminafile;
+  gboolean ret;
+  GError *error = NULL;
+  gchar *argv[50];  // Contains all the arguments included the password
+  gchar *argv_debug[50]; // Contains all the arguments, excluding the password
+  gchar *command_line; // The whole command line obtained from argv_debug
+  gint argc;
+  gint i;
+  gchar *option_str;
+  gint option_int;
+  gint option_int_2;
+  RemminaPluginData *gpdata;
+
   #define GET_PLUGIN_STRING(value) \
     g_strdup(remmina_plugin_service->file_get_string(remminafile, value))
   #define GET_PLUGIN_BOOLEAN(value) \
     remmina_plugin_service->file_get_int(remminafile, value, FALSE)
   #define GET_PLUGIN_INT(value, default_value) \
     remmina_plugin_service->file_get_int(remminafile, value, default_value)
-  #define GET_PLUGIN_PASSWORD(value) \
-    g_strdup(remmina_plugin_service->file_get_secret(remminafile, value))
   #define ADD_ARGUMENT(name, value) \
     { \
       argv[argc] = g_strdup(name); \
@@ -91,28 +153,18 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
         argv_debug[argc++] = g_strdup(g_strcmp0(name, "-p") != 0 ? value : "XXXXX"); \
       } \
     }
-  RemminaPluginData *gpdata;
-  RemminaFile *remminafile;
-  gboolean ret;
-  GError *error = NULL;
-  gchar *argv[50];  // Contains all the arguments included the password
-  gchar *argv_debug[50]; // Contains all the arguments, excluding the password
-  gchar *command_line; // The whole command line obtained from argv_debug
-  gint argc;
-  gint i;
   
-  gchar *option_str;
-  gint option_int;
+  remmina_plugin_service->log_printf("[%s] Plugin open connection\n", PLUGIN_NAME);
+  remminafile = remmina_plugin_service->protocol_plugin_get_file(gp);
 
   gpdata = (RemminaPluginData*) g_object_get_data(G_OBJECT(gp), "plugin-data");
-  remminafile = remmina_plugin_service->protocol_plugin_get_file(gp);
 
   if (!GET_PLUGIN_BOOLEAN("detached"))
   {
     remmina_plugin_service->protocol_plugin_set_width(gp, 640);
     remmina_plugin_service->protocol_plugin_set_height(gp, 480);
     gtk_widget_set_size_request(GTK_WIDGET(gp), 640, 480);
-    gpdata->socket_id = gtk_socket_get_id(GTK_SOCKET(gpdata->socket));
+    gpdata->socket_id = gtk_socket_get_id(gpdata->socket);
   }
 
   argc = 0;
@@ -127,7 +179,7 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
   if (option_str)
     ADD_ARGUMENT("-d", option_str);
   // The  password  to  authenticate  with
-  option_str = GET_PLUGIN_PASSWORD("password");
+  option_str = GET_PLUGIN_STRING("password");
   if (option_str)
     ADD_ARGUMENT("-p", option_str);
   // Client hostname
@@ -242,10 +294,8 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
   remmina_plugin_service->log_printf("[RDESKTOP] starting %s\n", command_line);
   g_free(command_line);
   // Execute the external process rdesktop
-  ret = g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH,
-    NULL, NULL, &gpdata->pid, &error);
-  remmina_plugin_service->log_printf(
-    "[RDESKTOP] started rdesktop with GPid %d\n", &gpdata->pid);
+  ret = g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, &gpdata->pid, &error);
+  remmina_plugin_service->log_printf("[RDESKTOP] started rdesktop with GPid %d\n", &gpdata->pid);
   // Free the arguments list
   for (i = 0; i < argc; i++)
   {
@@ -269,59 +319,11 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
 
 static gboolean remmina_plugin_rdesktop_close_connection(RemminaProtocolWidget *gp)
 {
-  TRACE_CALL("remmina_plugin_rdesktop_close_connection");
+  TRACE_CALL(__func__);
   remmina_plugin_service->log_printf("[%s] Plugin close connection\n", PLUGIN_NAME);
-  remmina_plugin_service->protocol_plugin_emit_signal(gp, "disconnect");
+  remmina_plugin_service->protocol_plugin_signal_connection_closed(gp);
   return FALSE;
 }
-
-static gpointer colordepth_list[] =
-{
-  "8", N_("256 colors (8 bpp)"),
-  "15", N_("High color (15 bpp)"),
-  "16", N_("High color (16 bpp)"),
-  "24", N_("True color (24 bpp)"),
-  "32", N_("True color (32 bpp)"),
-  NULL
-};
-
-static gpointer experience_list[] =
-{
-  "", N_("Default"),
-  "m", N_("Modem (no wallpaper, full window drag, animations, theming)"),
-  "b", N_("Broadband (remove wallpaper)"),
-  "l", N_("LAN (show all details)"),
-  "0x8F", N_("Modem with font smoothing"),
-  "0x81", N_("Broadband with font smoothing"),
-  "0x80", N_("LAN with font smoothing"),
-  "0x01", N_("Disable wallpaper"),
-  "0x02", N_("Disable full window drag"),
-  "0x03", N_("Disable wallpaper, full window drag"),
-  "0x04", N_("Disable animations"),
-  "0x05", N_("Disable animations, wallpaper"),
-  "0x06", N_("Disable animations, full window drag"),
-  "0x07", N_("Disable animations, wallpaper, full window drag"),
-  "0x08", N_("Disable theming"),
-  "0x09", N_("Disable theming, wallpaper"),
-  "0x0a", N_("Disable theming, full window drag"),
-  "0x0b", N_("Disable theming, wallpaper, full window drag"),
-  "0x0c", N_("Disable theming, animations"),
-  "0x0d", N_("Disable theming, animations, wallpaper"),
-  "0x0e", N_("Disable theming, animations, full window drag"),
-  "0x0f", N_("Disable everything"),
-  NULL
-};
-
-static gpointer sound_list[] =
-{
-  "off", N_("Off"),
-  "local", N_("Local"),
-  "local,11025,1", N_("Local - low quality"),
-  "local,22050,2", N_("Local - medium quality"),
-  "local,44100,2", N_("Local - high quality"),
-  "remote", N_("Remote"),
-  NULL
-};
 
 /* Array of RemminaProtocolSetting for basic settings.
  * Each item is composed by:
@@ -330,15 +332,15 @@ static gpointer sound_list[] =
  * c) Setting description
  * d) Compact disposition
  * e) Values for REMMINA_PROTOCOL_SETTING_TYPE_SELECT or REMMINA_PROTOCOL_SETTING_TYPE_COMBO
- * f) Unused pointer
+ * f) Setting tooltip
  */
 static const RemminaProtocolSetting remmina_plugin_rdesktop_basic_settings[] =
 {
-  { REMMINA_PROTOCOL_SETTING_TYPE_SERVER, NULL, NULL, FALSE, NULL, NULL },
+  { REMMINA_PROTOCOL_SETTING_TYPE_SERVER, "server", NULL, FALSE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_TEXT, "username", N_("User name"), FALSE, NULL, NULL },
-  { REMMINA_PROTOCOL_SETTING_TYPE_PASSWORD, NULL, NULL, FALSE, NULL, NULL },
+  { REMMINA_PROTOCOL_SETTING_TYPE_PASSWORD, "password", NULL, FALSE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_TEXT, "domain", N_("Domain"), FALSE, NULL, NULL },
-  { REMMINA_PROTOCOL_SETTING_TYPE_RESOLUTION, NULL, NULL, FALSE, NULL, NULL },
+  { REMMINA_PROTOCOL_SETTING_TYPE_RESOLUTION, "resolution", NULL, FALSE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_SELECT, "colordepth", N_("Color depth"), FALSE, colordepth_list, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_SELECT, "experience", N_("Experience"), FALSE, experience_list, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_SELECT, "sound", N_("Sound"), FALSE, sound_list, NULL },
@@ -353,7 +355,7 @@ static const RemminaProtocolSetting remmina_plugin_rdesktop_basic_settings[] =
  * c) Setting description
  * d) Compact disposition
  * e) Values for REMMINA_PROTOCOL_SETTING_TYPE_SELECT or REMMINA_PROTOCOL_SETTING_TYPE_COMBO
- * f) Unused pointer
+ * f) Setting tooltip
  */
 static const RemminaProtocolSetting remmina_plugin_rdesktop_advanced_settings[] =
 {
@@ -400,12 +402,12 @@ static RemminaProtocolPlugin remmina_plugin =
   NULL,                                         // Query for available features
   NULL,                                         // Call a feature
   NULL,                                         // Send a keystroke
-  NULL                                          // Capture screenshot
+  NULL                                          // Screenshot support
 };
 
 G_MODULE_EXPORT gboolean remmina_plugin_entry(RemminaPluginService *service)
 {
-  TRACE_CALL("remmina-plugin-rdesktop::remmina_plugin_entry");
+  TRACE_CALL(__func__);
   remmina_plugin_service = service;
 
   if (!service->register_plugin((RemminaPlugin *) &remmina_plugin))
