@@ -221,8 +221,7 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
   }
   // Redirects a smartcard to the server
   option_str = GET_PLUGIN_STRING("smartcardname");
-  if (option_str)
-  {
+  if (option_str) {
     ADD_ARGUMENT("-r", g_strdup_printf("scard:%s", option_str));
     g_free(option_str);
   }  
