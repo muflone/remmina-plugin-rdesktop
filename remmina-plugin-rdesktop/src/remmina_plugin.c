@@ -219,6 +219,13 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
     ADD_ARGUMENT("-r", g_strdup_printf("disk:share=%s", option_str));
     g_free(option_str);
   }
+  // Redirects a smartcard to the server
+  option_str = GET_PLUGIN_STRING("smartcardname");
+  if (option_str)
+  {
+    ADD_ARGUMENT("-r", g_strdup_printf("scard:%s", option_str));
+    g_free(option_str);
+  }  
 
   if (GET_PLUGIN_BOOLEAN("fullscreen")) {
     // Enable fullscreen mode
@@ -367,6 +374,7 @@ static const RemminaProtocolSetting remmina_plugin_rdesktop_advanced_settings[] 
   { REMMINA_PROTOCOL_SETTING_TYPE_CHECK, "fullscreen", N_("Fullscreen"), TRUE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_CHECK, "seamlessrdp", N_("Seamless RDP"), FALSE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_TEXT, "seamlessrdpshell", N_("Seamless RDP Shell Path"), FALSE, NULL, NULL },
+  { REMMINA_PROTOCOL_SETTING_TYPE_TEXT, "smartcardname", N_("Smartcard Name"), FALSE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_CHECK, "console", N_("Attach to console (Windows 2003 / 2003 R2)"), FALSE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_CHECK, "compression", N_("RDP datastream compression"), TRUE, NULL, NULL },
   { REMMINA_PROTOCOL_SETTING_TYPE_CHECK, "bitmapcaching", N_("Bitmap caching"), FALSE, NULL, NULL },
