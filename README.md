@@ -1,10 +1,10 @@
 # Remmina Plugin RDESKTOP
 
-**Author**: Fabio Castelli (Muflone) <muflone@vbsimple.net>
+**Author**: Fabio Castelli (Muflone) <muflone@muflone.com>
 
 **Home page**: http://www.muflone.com/remmina-plugin-rdesktop/
 
-**Copyright**: 2012-2016 Fabio Castelli (Muflone)
+**Copyright**: 2012-2019 Fabio Castelli (Muflone)
 
 **License**: GPL-2+
 
