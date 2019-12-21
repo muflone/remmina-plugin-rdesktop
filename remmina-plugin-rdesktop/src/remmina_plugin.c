@@ -21,7 +21,7 @@
 
 #include "plugin_config.h"
 #include <remmina/remmina_plugin.h>
-# include <gtk/gtkx.h>
+#include <gtk/gtkx.h>
 
 // Define the color depth list
 static gpointer colordepth_list[] = {
