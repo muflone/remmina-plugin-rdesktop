@@ -324,6 +324,7 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
   }
 }
 
+/* Close connection */
 static gboolean remmina_plugin_rdesktop_close_connection(RemminaProtocolWidget *gp) {
   TRACE_CALL(__func__);
   remmina_plugin_service->log_printf("[%s] Plugin close connection\n", PLUGIN_NAME);
