@@ -135,8 +135,7 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
     remmina_plugin_service->file_get_int(remminafile, value, FALSE)
   #define GET_PLUGIN_INT(value, default_value) \
     remmina_plugin_service->file_get_int(remminafile, value, default_value)
-  #define ADD_ARGUMENT(name, value) \
-    { \
+  #define ADD_ARGUMENT(name, value) { \
       argv[argc] = g_strdup(name); \
       argv_debug[argc] = g_strdup(name); \
       argc++; \
@@ -171,7 +170,7 @@ static gboolean remmina_plugin_rdesktop_open_connection(RemminaProtocolWidget *g
   if (option_str) {
     ADD_ARGUMENT("-d", option_str);
   }
-  // The  password  to  authenticate  with
+  // The password to authenticate with
   option_str = GET_PLUGIN_STRING("password");
   if (option_str) {
     ADD_ARGUMENT("-p", option_str);
